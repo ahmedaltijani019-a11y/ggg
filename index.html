@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة عائلتنا الذكية</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <button class="mode-btn" onclick="toggleDarkMode()">🌙 المظهر</button>
+
+    <h1>🏠 منصة العائلة الذكية</h1>
+    
+    <div class="daily-quote">
+        💡 <strong>دعاء اليوم:</strong> "اللهم احفظ الوالد التجاني والوالدة تهاني وبارِك في عائلتنا واجعل بيتنا عامراً بالخير والرضا"
+    </div>
+
+    <!-- لوحة متصدري النقاط -->
+    <div class="leaderboard-card">
+        <h3>🏆 لوحة متصدري النقاط العائلية</h3>
+        <div id="leaderboard" class="leaderboard-grid">
+            <!-- سيتم تحميل النقاط تلقائياً هنا -->
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-label">نسبة اكتمال طلبات المنزل: <span id="progressText">0%</span></div>
+        <div class="progress-bar-outer">
+            <div id="progressBar" class="progress-bar-inner"></div>
+        </div>
+    </div>
+
+    <h2>📝 إضافة طلب / تذكير جديد</h2>
+
+    <div class="input-group">
+        <input type="text" id="taskInput" placeholder="اكتب طلب مقاضي، موعد، أو اقتراح وجبة...">
+        
+        <select id="categorySelect">
+            <option value="🛒 طلبات المقاضي">🛒 طلبات المقاضي</option>
+            <option value="🍲 وجبة الغداء/العشاء">🍲 اقتراح وجبة</option>
+            <option value="💊 مواعيد وأدوية">💊 مواعيد وأدوية</option>
+            <option value="⚡ فواتير ومصاريف">⚡ فواتير ومصاريف</option>
+        </select>
+
+        <select id="userSelect">
+            <option value="الوالد التجاني">الوالد التجاني 👨‍🦳</option>
+            <option value="الوالدة تهاني">الوالدة تهاني 👩‍🦳</option>
+            <option value="أحمد">أحمد (المطور) 💻</option>
+            <option value="السر">السر 👦</option>
+            <option value="أسامة">أسامة 👦</option>
+            <option value="محمد">محمد 👦</option>
+            <option value="العائلة">جميع العائلة 🏠</option>
+        </select>
+
+        <button onclick="addTask()">إضافة 🚀</button>
+    </div>
+
+    <ul id="taskList"></ul>
+
+    <footer>
+        <p>💡 تم تصميم هذا الموقع بحب لخدمة عائلتي الغالية بواسطة المطور <strong>أحمد</strong> | 2026 ©</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

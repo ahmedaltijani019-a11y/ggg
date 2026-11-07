@@ -1,0 +1,209 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f6f9;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    direction: rtl;
+    text-align: right;
+}
+
+h1 {
+    color: #2c3e50;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.daily-quote {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+/* لوحة النقاط والمتصدرين */
+.leaderboard-card {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    max-width: 600px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.leaderboard-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    text-align: center;
+}
+
+.leaderboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+}
+
+.user-score-box {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-align: center;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-score-name {
+    font-size: 12px;
+    display: block;
+}
+
+.user-score-points {
+    font-size: 16px;
+    font-weight: bold;
+    color: #f1c40f;
+}
+
+.progress-container {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    max-width: 600px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.progress-label {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #2c3e50;
+}
+
+.progress-bar-outer {
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    height: 15px;
+    overflow: hidden;
+}
+
+.progress-bar-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #11998e, #38ef7d);
+    transition: width 0.4s ease;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 630px;
+    align-items: center;
+}
+
+input[type="text"] {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    flex: 2;
+    min-width: 200px;
+}
+
+#categorySelect, #userSelect {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: white;
+    flex: 1;
+    min-width: 140px;
+}
+
+button {
+    padding: 10px 18px;
+    font-size: 14px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover { background-color: #219150; }
+
+ul {
+    background: #ffffff;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    list-style-type: none;
+    max-width: 600px;
+}
+
+li {
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+li.completed {
+    text-decoration: line-through;
+    color: #888;
+}
+
+.category-tag {
+    font-size: 12px;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.user-tag {
+    font-size: 11px;
+    background-color: #e0f7fa;
+    color: #006064;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.delete-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.mode-btn { float: left; background-color: #34495e; }
+
+footer {
+    margin-top: 40px;
+    text-align: center;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    font-size: 13px;
+    color: #777;
+}
+
+body.dark-theme { background-color: #1a1a1a; color: #f4f6f9; }
+body.dark-theme ul, body.dark-theme .progress-container { background: #2d2d2d; color: #fff; }
+body.dark-theme input[type="text"], body.dark-theme #categorySelect, body.dark-theme #userSelect { background-color: #333; color: #fff; border-color: #555; }
+body.dark-theme .daily-quote { background-color: #332b00; color: #ffe066; border-color: #665200; }
