@@ -5,7 +5,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// إعدادات مشروعك السحابي في Firebase التي حصلت عليها مسبقاً
+// إعدادات مشروعك السحابي في Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyDeuWVOzOs784lretb6GVByMspAY4EzN_k",
     authDomain: "family-b2c75.firebaseapp.com",
@@ -28,15 +28,15 @@ const FAMILY_MEMBERS = [
     "السر",
     "أسامة",
     "محمد",
-    "العائلة"
+
 ];
 
-// ربط كل اسم عائلي ببريد إلكتروني وهمي لإنشاء حساب Firebase Auth
+// ربط كل اسم عائلي بالإيميل الفعلي الذي أضفته في Firebase
 const MEMBER_EMAILS = {
     "الوالد التجاني": "eltijani@family.com",
     "الوالدة تهاني": "tahani@family.com",
-    "أحمد": "ahmed@family.com",
-    "السر": "alsir@family.com",
+    "أحمد": "elssier@family.com",      // الإيميل الخاص بك الذي أضفته في Firebase
+    "السر": "mort4l101@gmail.com",     // الإيميل الآخر المضاف
     "أسامة": "osama@family.com",
     "محمد": "mohamed@family.com"
 };
@@ -49,7 +49,7 @@ let familyScores = {
     "السر": 0,
     "أسامة": 0,
     "محمد": 0,
-    
+
 };
 let currentFilter = "all";
 let currentLoggedInUser = null;
@@ -66,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, (user) => {
         const modal = document.getElementById("authModal");
         if (user) {
-            // استخراج اسم المستخدم من البريد أو تخزينه
             currentLoggedInUser = Object.keys(MEMBER_EMAILS).find(key => MEMBER_EMAILS[key] === user.email) || "أحمد";
             modal.style.display = "none";
             document.getElementById("currentLoggedUserDisplay").textContent = `مرحباً، ${currentLoggedInUser} 👤`;
@@ -118,10 +117,9 @@ window.handleLogout = function() {
 // ======================================
 
 async function initCloudSync() {
-    // 1. ترحيل بيانات LocalStorage القديمة للسحابة إن وجدت لأول مرة
     await migrateLocalDataToCloudIfNeeded();
 
-    // 2. الاستماع اللحظي للـ Tasks من Firestore
+    // الاستماع اللحظي للـ Tasks من Firestore
     onSnapshot(collection(db, "familyTasks"), (snapshot) => {
         tasks = [];
         snapshot.forEach((docSnap) => {
@@ -138,7 +136,7 @@ async function initCloudSync() {
         updateDashboard();
     });
 
-    // 3. الاستماع اللحظي لنقاط العائلة من Firestore
+    // الاستماع اللحظي لنقاط العائلة من Firestore
     onSnapshot(doc(db, "familyData", "scores"), (docSnap) => {
         if (docSnap.exists()) {
             familyScores = docSnap.data();
@@ -154,13 +152,11 @@ async function migrateLocalDataToCloudIfNeeded() {
         const scoresDocRef = doc(db, "familyData", "scores");
         const scoresSnap = await getDoc(scoresDocRef);
 
-        // إذا كانت السحابة فارغة والنقاط المحلية موجودة، نقوم برفعها
         if (!scoresSnap.exists() && localStorage.getItem("familyScores")) {
             const localScores = JSON.parse(localStorage.getItem("familyScores"));
             await setDoc(scoresDocRef, localScores);
         }
 
-        // رفع المهام المحلية القديمة للسحابة إذا لم ترفع من قبل
         if (localTasks.length > 0 && !localStorage.getItem("migratedToCloud")) {
             for (let t of localTasks) {
                 await addDoc(collection(db, "familyTasks"), {
@@ -251,12 +247,10 @@ async function toggleCloudTask(id) {
     const pointsChange = newCompletedState ? 10 : -10;
 
     try {
-        // تحديث حالة المهمة في السحابة
         await updateDoc(doc(db, "familyTasks", id), {
             completed: newCompletedState
         });
 
-        // تحديث نقاط الشخص المسؤول
         familyScores[task.user] = Math.max(0, (familyScores[task.user] || 0) + pointsChange);
         await setDoc(doc(db, "familyData", "scores"), familyScores);
 
