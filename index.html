@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f5f7fb">
-    <meta name="description" content="منصة عائلية ذكية لتنظيم المهام والطلبات والتذكيرات">
-    <title>عائلتنا | المنصة الذكية</title>
+    <title>عائلتنا | المنصة الذكية السحابية</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,10 +12,41 @@
 
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script src="script.js" defer></script>
+    <!-- تم جعل سكريبت الجافاسكريبت بنظام الموديول لدعم Firebase -->
+    <script type="module" src="script.js" defer></script>
 </head>
 
 <body>
+
+    <!-- نافذة تسجيل الدخول برمز PIN (تظهر عند عدم تسجيل الدخول) -->
+    <div id="authModal" class="auth-modal-overlay">
+        <div class="auth-modal-card">
+            <div class="brand-icon" style="margin: 0 auto 15px;">⌂</div>
+            <h2>تسجيل دخول عائلة التجاني</h2>
+            <p>اختر اسمك وأدخل رمز الـ PIN الخاص بك للمتابعة:</p>
+            
+            <div class="form-field" style="text-align: right;">
+                <label for="loginUserSelect">اسم فرد العائلة</label>
+                <select id="loginUserSelect">
+                    <option value="الوالد التجاني">الوالد التجاني</option>
+                    <option value="الوالدة تهاني">الوالدة تهاني</option>
+                    <option value="أحمد">أحمد</option>
+                    <option value="السر">السر</option>
+                    <option value="أسامة">أسامة</option>
+                    <option value="محمد">محمد</option>
+                </select>
+            </div>
+
+            <div class="form-field" style="text-align: right;">
+                <label for="loginPinInput">رمز المرور (PIN)</label>
+                <input type="password" id="loginPinInput" placeholder="أدخل رمز الـ PIN..." maxlength="8">
+            </div>
+
+            <button type="button" class="primary-btn" onclick="handleLogin()">دخول للمنصة 🚀</button>
+            <p id="authErrorMsg" style="color: #e66a6a; font-size: 11px; margin-top: 10px;"></p>
+        </div>
+    </div>
+
     <div class="app-container">
 
         <header class="topbar">
@@ -24,24 +54,27 @@
                 <div class="brand-icon">⌂</div>
                 <div>
                     <strong>عائلتنا</strong>
-                    <span>المنصة الذكية</span>
+                    <span id="currentLoggedUserDisplay">المنصة الذكية (سحابي)</span>
                 </div>
             </a>
 
-            <button id="themeToggle" class="theme-btn" type="button" aria-label="تغيير المظهر">
-                <span id="themeIcon">🌙</span>
-                <span id="themeLabel">الوضع الليلي</span>
-            </button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button id="logoutBtn" class="theme-btn" type="button" onclick="handleLogout()" style="background: #ffecec; color: #c0392b; border-color: #f5b7b1;">خروج 🚪</button>
+                <button id="themeToggle" class="theme-btn" type="button" aria-label="تغيير المظهر">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeLabel">الوضع الليلي</span>
+                </button>
+            </div>
         </header>
 
         <main>
             <section class="welcome-section">
                 <div>
-                    <span class="eyebrow">HOME MANAGEMENT</span>
+                    <span class="eyebrow">CLOUD FAMILY HUB</span>
                     <h1>أهلاً بعائلتنا <span>👋</span></h1>
-                    <p>كل شيء في بيتنا يصبح أسهل عندما ننظمه معاً.</p>
+                    <p>مزامنة حية للطلبات والمهام عبر السحابة لجميع الأجهزة.</p>
                 </div>
-                <div class="welcome-decoration">🏡</div>
+                <div class="welcome-decoration">☁️</div>
             </section>
 
             <section class="quote-card">
@@ -151,7 +184,7 @@
                             </div>
 
                             <button type="submit" class="primary-btn">
-                                <span>＋</span> إضافة المهمة
+                                <span>＋</span> إضافة المهمة للسحابة
                             </button>
                         </form>
                     </section>
@@ -160,7 +193,7 @@
                         <div class="section-heading">
                             <div>
                                 <span class="eyebrow">YOUR TASKS</span>
-                                <h2>قائمة المهام</h2>
+                                <h2>قائمة المهام السحابية</h2>
                             </div>
                             <span id="taskCount" class="count-badge">0 مهمة</span>
                         </div>
@@ -175,8 +208,8 @@
 
                         <div id="emptyState" class="empty-state">
                             <div>📭</div>
-                            <strong>لا توجد مهام هنا</strong>
-                            <p>أضف أول مهمة وابدأ تنظيم يوم العائلة.</p>
+                            <strong>لا توجد مهام سحابية حالياً</strong>
+                            <p>أضف أول مهمة لتتزامن فوراً مع باقي الأجهزة.</p>
                         </div>
                     </section>
                 </div>
@@ -194,14 +227,14 @@
                         <div id="leaderboard" class="leaderboard-list"></div>
 
                         <div class="points-note">
-                            ⭐ كل مهمة مكتملة تمنح المسؤول 10 نقاط.
+                            ⭐ يتم مزامنة النقاط لحظياً عبر السحابة.
                         </div>
                     </section>
 
                     <section class="motivation-card">
-                        <div class="motivation-icon">🌟</div>
-                        <h3>معاً نصنع الفرق!</h3>
-                        <p>كل مهمة صغيرة ننجزها اليوم تجعل بيتنا أكثر تنظيماً وسعادة.</p>
+                        <div class="motivation-icon">☁️</div>
+                        <h3>منصة سحابية متكاملة</h3>
+                        <p>بفضل Firebase، بات بإمكان العائلة متابعة الطلبات من أي جهاز وفي أي وقت.</p>
                     </section>
                 </aside>
 
@@ -209,9 +242,24 @@
         </main>
 
         <footer>
-            <span>© 2026 | أحمد</span>
+            <span>© 2026 | أحمد (التطوير السحابي)</span>
         </footer>
 
     </div>
+
+    <!-- إضافة ستايل إضافي لنافذة تسجيل الدخول -->
+    <style>
+        .auth-modal-overlay {
+            position: fixed; inset: 0; background: rgba(17, 21, 34, 0.85);
+            display: grid; place-items: center; z-index: 9999; backdrop-filter: blur(8px);
+        }
+        .auth-modal-card {
+            background: var(--surface); padding: 30px; border-radius: 20px;
+            width: min(400px, calc(100% - 32px)); box-shadow: 0 10px 35px rgba(0,0,0,0.3);
+            text-align: center; border: 1px solid var(--border);
+        }
+        .auth-modal-card h2 { font-size: 19px; margin: 10px 0 5px; color: var(--text); }
+        .auth-modal-card p { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+    </style>
 </body>
 </html>
