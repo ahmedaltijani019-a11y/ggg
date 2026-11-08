@@ -1,55 +1,53 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f5f7fb">
-    <meta name="description" content="منصة عائلية ذكية لتنظيم المهام والطلبات والتذكيرات">
     <title>عائلتنا | المنصة الذكية</title>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script type="module" src="script.js"></script>
+    <script src="script.js" defer></script>
 </head>
-
 <body>
+    <section id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="login-brand-mark">⌂</div>
+            <span class="login-eyebrow">FAMILY SPACE</span>
+            <h1>مرحباً بعودتك</h1>
+            <p class="login-description">اختر اسمك وأدخل رمز PIN للدخول إلى منصتكم العائلية.</p>
 
-    <!-- نافذة تسجيل الدخول السحابية -->
-    <div id="authModal" class="auth-modal" style="display: flex;">
-        <div class="auth-card">
-            <div class="auth-icon">🏠</div>
-            <h2>تسجيل دخول عائلة التجاني</h2>
-            <p>اختر اسمك وأدخل رمز الـ PIN الخاص بك للمتابعة:</p>
-            
-            <div class="auth-form-group">
-                <label for="loginUserSelect">اسم فرد العائلة</label>
-                <select id="loginUserSelect">
-                    <option value="الوالد التجاني">الوالد التجاني</option>
-                    <option value="الوالدة تهاني">الوالدة تهاني</option>
-                    <option value="أحمد">أحمد</option>
-                    <option value="السر">السر</option>
-                    <option value="أسامة">أسامة</option>
-                    <option value="محمد">محمد</option>
-                </select>
-            </div>
+            <label for="loginMember">من سيستخدم المنصة؟</label>
+            <select id="loginMember" class="login-control">
+                <option value="الوالد التجاني">الوالد التجاني</option>
+                <option value="الوالدة تهاني">الوالدة تهاني</option>
+                <option value="أحمد">أحمد</option>
+                <option value="السر">السر</option>
+                <option value="أسامة">أسامة</option>
+                <option value="محمد">محمد</option>
+            </select>
 
-            <div class="auth-form-group">
-                <label for="loginPinInput">رمز المرور (PIN)</label>
-                <input type="password" id="loginPinInput" placeholder="******" maxlength="6">
-            </div>
+            <label for="loginPin">رمز PIN الشخصي</label>
+            <input id="loginPin" class="login-control" type="password"
+                   inputmode="numeric" maxlength="8"
+                   placeholder="أدخل 4 أرقام على الأقل">
 
-            <button type="button" id="loginBtn" class="primary-btn" style="margin-top: 10px;">دخول المنصة 🚀</button>
-            <p id="authErrorMsg" class="error-msg"></p>
+            <p id="loginHint" class="login-hint"></p>
+
+            <button id="loginButton" class="login-button" type="button">
+                <span>دخول المنصة</span>
+                <span class="login-button-icon">↗</span>
+            </button>
+
+            <p id="loginError" class="login-error" role="alert"></p>
+            <div class="login-footer">مساحة عائلية خاصة • إنجازاتكم محفوظة</div>
         </div>
-    </div>
+    </section>
 
-    <!-- الواجهة الرئيسية -->
-    <div class="app-container">
-
+    <div class="app-container" id="appContainer" hidden>
         <header class="topbar">
             <a href="#" class="brand">
                 <div class="brand-icon">⌂</div>
@@ -58,22 +56,17 @@
                     <span>المنصة الذكية</span>
                 </div>
             </a>
-
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="currentLoggedUserDisplay" style="font-size: 12px; font-weight: bold; color: var(--primary);"></span>
-                <button id="themeToggle" class="theme-btn" type="button" aria-label="تغيير المظهر">
-                    <span id="themeIcon">🌙</span>
-                    <span id="themeLabel">الوضع الليلي</span>
-                </button>
-                <button id="logoutBtn" class="theme-btn" style="background: #e66a6a; color: white; border: none;">تسجيل الخروج</button>
-            </div>
+            <button id="themeToggle" class="theme-btn" type="button">
+                <span id="themeIcon">🌙</span>
+                <span id="themeLabel">الوضع الليلي</span>
+            </button>
         </header>
 
         <main>
             <section class="welcome-section">
                 <div>
                     <span class="eyebrow">HOME MANAGEMENT</span>
-                    <h1>أهلاً بعائلتنا <span>👋</span></h1>
+                    <h1>أهلاً بعائلتنا 👋</h1>
                     <p>كل شيء في بيتنا يصبح أسهل عندما ننظمه معاً.</p>
                 </div>
                 <div class="welcome-decoration">🏡</div>
@@ -94,33 +87,28 @@
                     <strong id="totalTasks">0</strong>
                     <small>جميع الطلبات المسجلة</small>
                 </article>
-
                 <article class="stat-card">
                     <div class="stat-icon green">✓</div>
                     <span>المهام المكتملة</span>
                     <strong id="completedTasks">0</strong>
                     <small>تم إنجازها بنجاح</small>
                 </article>
-
                 <article class="stat-card">
                     <div class="stat-icon orange">⏳</div>
                     <span>المهام المتبقية</span>
                     <strong id="remainingTasks">0</strong>
                     <small>بانتظار الإنجاز</small>
                 </article>
-
                 <article class="stat-card">
                     <div class="stat-icon blue">⭐</div>
-                    <span>مجموع النقاط</span>
+                    <span>مجموع EXP</span>
                     <strong id="totalPoints">0</strong>
-                    <small>إنجازات العائلة</small>
+                    <small>خبرة العائلة</small>
                 </article>
             </section>
 
             <section class="content-grid">
-
                 <div class="main-column">
-
                     <section class="panel progress-panel">
                         <div class="section-heading">
                             <div>
@@ -129,11 +117,9 @@
                             </div>
                             <span id="progressText" class="progress-percent">0%</span>
                         </div>
-
                         <div class="progress-track">
                             <div id="progressBar" class="progress-fill"></div>
                         </div>
-
                         <p id="progressMessage" class="muted-text">لنبدأ بإنجاز مهامنا اليوم!</p>
                     </section>
 
@@ -149,13 +135,8 @@
                         <form id="taskForm">
                             <div class="form-field">
                                 <label for="taskInput">اسم المهمة</label>
-                                <input
-                                    type="text"
-                                    id="taskInput"
-                                    maxlength="120"
-                                    placeholder="مثلاً: شراء الأرز والحليب..."
-                                    required
-                                >
+                                <input type="text" id="taskInput" maxlength="120"
+                                       placeholder="مثلاً: شراء الأرز والحليب..." required>
                             </div>
 
                             <div class="form-row">
@@ -170,7 +151,6 @@
                                         <option value="📌 أخرى">📌 أخرى</option>
                                     </select>
                                 </div>
-
                                 <div class="form-field">
                                     <label for="userSelect">المسؤول عن المهمة</label>
                                     <select id="userSelect">
@@ -184,10 +164,7 @@
                                     </select>
                                 </div>
                             </div>
-
-                            <button type="submit" class="primary-btn">
-                                <span>＋</span> إضافة المهمة
-                            </button>
+                            <button type="submit" class="primary-btn">＋ إضافة المهمة</button>
                         </form>
                     </section>
 
@@ -199,15 +176,12 @@
                             </div>
                             <span id="taskCount" class="count-badge">0 مهمة</span>
                         </div>
-
                         <div class="filter-row">
-                            <button class="filter-btn active" data-filter="all">الكل</button>
-                            <button class="filter-btn" data-filter="pending">قيد الانتظار</button>
-                            <button class="filter-btn" data-filter="completed">مكتملة</button>
+                            <button type="button" class="filter-btn active" data-filter="all">الكل</button>
+                            <button type="button" class="filter-btn" data-filter="pending">قيد الانتظار</button>
+                            <button type="button" class="filter-btn" data-filter="completed">مكتملة</button>
                         </div>
-
                         <ul id="taskList" class="task-list"></ul>
-
                         <div id="emptyState" class="empty-state">
                             <div>📭</div>
                             <strong>لا توجد مهام هنا</strong>
@@ -217,6 +191,26 @@
                 </div>
 
                 <aside class="side-column">
+                    <section class="panel personal-panel">
+                        <div class="section-heading">
+                            <div>
+                                <span class="eyebrow">YOUR PROFILE</span>
+                                <h2>إنجازاتي الشخصية</h2>
+                            </div>
+                            <span>🎖️</span>
+                        </div>
+                        <div class="personal-name" id="personalName">-</div>
+                        <div class="personal-level">
+                            <span id="personalLevel">المستوى 1</span>
+                            <strong id="personalExp">0 EXP</strong>
+                        </div>
+                        <div class="level-track">
+                            <div id="personalLevelBar" class="level-fill"></div>
+                        </div>
+                        <p class="level-caption" id="personalLevelCaption">0 / 100 EXP للمستوى التالي</p>
+                        <button id="logoutButton" class="logout-button" type="button">تسجيل الخروج</button>
+                    </section>
+
                     <section class="panel leaderboard-panel">
                         <div class="section-heading">
                             <div>
@@ -225,12 +219,8 @@
                             </div>
                             <span>🏆</span>
                         </div>
-
                         <div id="leaderboard" class="leaderboard-list"></div>
-
-                        <div class="points-note">
-                            ⭐ كل مهمة مكتملة تمنح المسؤول 10 نقاط.
-                        </div>
+                        <div class="points-note">⭐ كل مهمة مكتملة تمنح المسؤول 10 EXP.</div>
                     </section>
 
                     <section class="motivation-card">
@@ -239,14 +229,10 @@
                         <p>كل مهمة صغيرة ننجزها اليوم تجعل بيتنا أكثر تنظيماً وسعادة.</p>
                     </section>
                 </aside>
-
             </section>
         </main>
 
-        <footer>
-            <span>© 2026 | أحمد</span>
-        </footer>
-
+        <footer><span>© 2026 | أحمد</span></footer>
     </div>
 </body>
 </html>
