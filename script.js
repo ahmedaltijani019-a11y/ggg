@@ -32,10 +32,10 @@ const FAMILY_MEMBERS = [
 const MEMBER_EMAILS = {
     "الوالد التجاني": "eltijani@family.com",
     "الوالدة تهاني": "tahani@family.com",
-    "أحمد": "elssier@family.com",      // الإيميل الخاص بك المرتبط باسم العائلة
-    "السر": "ahmed@family.com",       // إيميل السر
-    "أسامة": "osama@family.com",
-    "محمد": "mohamed@family.com"
+    "أحمد": "ahmed@family.com",       // إيميلك الشخصي
+    "السر": "elssier@family.com",      // إيميل السر
+    "أسامة": "osama@family.com",     // إيميل أسامة
+    "محمد": "mohamed@family.com"      // إيميل محمد
 };
 
 let tasks = [];
