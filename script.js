@@ -28,16 +28,14 @@ const FAMILY_MEMBERS = [
     "محمد",
     "العائلة"
 ];
-
 const MEMBER_EMAILS = {
-    " التجاني": "eltijani@family.com",
-    " تهاني": "tahani@family.com",
-    "أحمد": "ahmed@family.com",
-    "السر": "elssier@family.com",
-    "أسامة": "osama@family.com",
-    "محمد": "mohamed@family.com"
+    "الوالد التجاني": "eltijani@family.com",
+    "الوالدة تهاني": "tahani@family.com",
+    "أحمد": "ahmed@family.com",       // إيميلك الشخصي
+    "السر": "elssier@family.com",      // إيميل السر
+    "أسامة": "osama@family.com",     // إيميل أسامة
+    "محمد": "mohamed@family.com"      // إيميل محمد
 };
-
 let tasks = [];
 let familyScores = {
     " التجاني": 0,
@@ -74,14 +72,13 @@ window.handleLogin = async function() {
     const rawPin = document.getElementById("loginPinInput").value.trim();
     const errorMsg = document.getElementById("authErrorMsg");
 
+    const email = MEMBER_EMAILS[userSelect];
+    
+    // سطر طباعة للتحقق في الـ Console
+    console.log("جاري تجربة الدخول بالإيميل:", email, "والرمز:", rawPin);
+
     if (!rawPin) {
         errorMsg.textContent = "الرجاء إدخال رمز الـ PIN الخاص بك.";
-        return;
-    }
-
-    const email = MEMBER_EMAILS[userSelect];
-    if (!email) {
-        errorMsg.textContent = "حدث خطأ في تحديد الحساب.";
         return;
     }
 
@@ -91,8 +88,8 @@ window.handleLogin = async function() {
         errorMsg.textContent = "";
         document.getElementById("loginPinInput").value = "";
     } catch (error) {
-        console.error(error);
-        errorMsg.textContent = "رمز الـ PIN غير صحيح (تأكد أنه 6 أرقام فأكثر).";
+        console.error("خطأ Firebase كاملاً:", error);
+        errorMsg.textContent = "رمز الـ PIN غير صحيح. تأكد من الرمز وحاول مجدداً.";
     }
 };
 
