@@ -26,27 +26,27 @@ const FAMILY_MEMBERS = [
     "السر",
     "أسامة",
     "محمد",
-    
+    "العائلة"
 ];
 
 const MEMBER_EMAILS = {
-    "الوالد التجاني": "eltijani@family.com",
-    "الوالدة تهاني": "tahani@family.com",
-    "أحمد": "ahmed@family.com",       // إيميلك الشخصي
-    "السر": "elssier@family.com",      // إيميل السر
-    "أسامة": "osama@family.com",     // إيميل أسامة
-    "محمد": "mohamed@family.com"      // إيميل محمد
+    " التجاني": "eltijani@family.com",
+    " تهاني": "tahani@family.com",
+    "أحمد": "ahmed@family.com",
+    "السر": "elssier@family.com",
+    "أسامة": "osama@family.com",
+    "محمد": "mohamed@family.com"
 };
 
 let tasks = [];
 let familyScores = {
-    "الوالد التجاني": 0,
-    "الوالدة تهاني": 0,
+    " التجاني": 0,
+    " تهاني": 0,
     "أحمد": 0,
     "السر": 0,
     "أسامة": 0,
     "محمد": 0,
-    
+
 };
 let currentFilter = "all";
 let currentLoggedInUser = null;
