@@ -26,14 +26,14 @@ const FAMILY_MEMBERS = [
     "السر",
     "أسامة",
     "محمد",
-    "العائلة"
+    
 ];
 
 const MEMBER_EMAILS = {
     "الوالد التجاني": "eltijani@family.com",
     "الوالدة تهاني": "tahani@family.com",
-    "أحمد": "ahmed@family.com",
-    "السر": "alsir@family.com",
+    "أحمد": "elssier@family.com",      // الإيميل الخاص بك المرتبط باسم العائلة
+    "السر": "ahmed@family.com",       // إيميل السر
     "أسامة": "osama@family.com",
     "محمد": "mohamed@family.com"
 };
@@ -46,7 +46,7 @@ let familyScores = {
     "السر": 0,
     "أسامة": 0,
     "محمد": 0,
-    "العائلة": 0
+    
 };
 let currentFilter = "all";
 let currentLoggedInUser = null;
