@@ -1,3 +1,34 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+    getFirestore,
+    doc,
+    runTransaction,
+    onSnapshot,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* إعدادات Firebase */
+const firebaseConfig = {
+    apiKey: "AIzaSyDeuWVOzOs784lretb6GVByMspAY4EzN_k",
+    authDomain: "family-b2c75.firebaseapp.com",
+    projectId: "family-b2c75",
+    storageBucket: "family-b2c75.firebasestorage.app",
+    messagingSenderId: "321218921724",
+    appId: "1:321218921724:web:b7b0a62b62ff499b798379",
+    measurementId: "G-RW48CJ6160"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const FAMILY_MEMBERS = [
     "الوالد التجاني",
@@ -5,111 +36,117 @@ const FAMILY_MEMBERS = [
     "أحمد",
     "السر",
     "أسامة",
-    "محمد",
-    "العائلة"
+    "محمد"
 ];
+
+const MEMBER_EMAILS = {
+    "الوالد التجاني": "eltijani@family.com",
+    "الوالدة تهاني": "tahani@family.com",
+    "أحمد": "ahmed@family.com",
+    "السر": "elssier@family.com",
+    "أسامة": "osama@family.com",
+    "محمد": "mohamed@family.com"
+};
 
 const STORAGE_KEYS = {
     tasks: "familyTasks",
     scores: "familyScores",
-    theme: "familyTheme",
-    pins: "familyPins",
-    currentUser: "familyCurrentUser"
+    theme: "familyTheme"
 };
 
 const EXP_PER_TASK = 10;
 const EXP_PER_LEVEL = 100;
+const SHARED_DOC = doc(db, "familyData", "shared");
+
+let tasks = [];
+let familyScores = {};
+let currentFilter = "all";
+let currentUser = "";
+let unsubscribeSharedData = null;
+let cloudReady = false;
 
 function readStorage(key, fallback) {
     try {
         const raw = localStorage.getItem(key);
         return raw === null ? fallback : JSON.parse(raw);
     } catch (error) {
-        console.error("Storage read error:", error);
+        console.warn("تعذر قراءة التخزين المحلي:", error);
         return fallback;
     }
 }
 
-function saveStorage(key, value) {
+function createId() {
+    return globalThis.crypto?.randomUUID?.()
+        || `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+}
+
+function normalizeTasks(value) {
+    if (!Array.isArray(value)) return [];
+
+    return value.map(task => ({
+        id: String(task.id || createId()),
+        text: String(task.text || "").trim(),
+        category: String(task.category || "📌 أخرى"),
+        user: [...FAMILY_MEMBERS, "العائلة"].includes(task.user) ? task.user : "العائلة",
+        completed: Boolean(task.completed),
+        awardedTo: FAMILY_MEMBERS.includes(task.awardedTo) ? task.awardedTo : ""
+    })).filter(task => task.text);
+}
+
+function normalizeScores(value) {
+    const result = {};
+
+    FAMILY_MEMBERS.forEach(member => {
+        const score = Number(value?.[member] ?? 0);
+        result[member] = Number.isFinite(score) ? Math.max(0, score) : 0;
+    });
+
+    return result;
+}
+
+function mirrorLocalData() {
     try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
+        localStorage.setItem(STORAGE_KEYS.tasks, JSON.stringify(tasks));
+        localStorage.setItem(STORAGE_KEYS.scores, JSON.stringify(familyScores));
     } catch (error) {
-        console.error("Storage save error:", error);
-        alert("تعذر حفظ البيانات في هذا المتصفح.");
-        return false;
+        console.warn("تعذر تحديث النسخة المحلية:", error);
     }
 }
 
-function createId() {
-    return (crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-let tasks = readStorage(STORAGE_KEYS.tasks, []);
-
-if (!Array.isArray(tasks)) tasks = [];
-
-tasks = tasks.map(task => ({
-    id: task.id || createId(),
-    text: String(task.text || ""),
-    category: task.category || "📌 أخرى",
-    user: FAMILY_MEMBERS.includes(task.user) ? task.user : "العائلة",
-    completed: Boolean(task.completed)
-})).filter(task => task.text);
-
-saveStorage(STORAGE_KEYS.tasks, tasks);
-
-let familyScores = readStorage(STORAGE_KEYS.scores, {});
-
-if (!familyScores || typeof familyScores !== "object" || Array.isArray(familyScores)) {
-    familyScores = {};
-}
-
-FAMILY_MEMBERS.forEach(member => {
-    const value = Number(familyScores[member]);
-    familyScores[member] = Number.isFinite(value) ? Math.max(0, value) : 0;
-});
-
-saveStorage(STORAGE_KEYS.scores, familyScores);
-
-let currentFilter = "all";
-let currentUser = localStorage.getItem(STORAGE_KEYS.currentUser) || "";
-
 function getLevel(exp) {
     const safeExp = Math.max(0, Number(exp) || 0);
+    const intoLevel = safeExp % EXP_PER_LEVEL;
 
     return {
         level: Math.floor(safeExp / EXP_PER_LEVEL) + 1,
-        intoLevel: safeExp % EXP_PER_LEVEL,
-        remaining: EXP_PER_LEVEL - (safeExp % EXP_PER_LEVEL),
-        percent: safeExp % EXP_PER_LEVEL
+        intoLevel,
+        remaining: EXP_PER_LEVEL - intoLevel,
+        percent: intoLevel
     };
+}
+
+function setLoginError(message) {
+    const error = document.getElementById("loginError");
+    if (error) error.textContent = message || "";
+}
+
+function setLoginBusy(busy) {
+    const button = document.getElementById("loginButton");
+    if (!button) return;
+
+    button.disabled = busy;
+
+    const label = button.querySelector("span");
+    if (label) label.textContent = busy ? "جارٍ التحقق..." : "دخول المنصة";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     initializeTheme();
     initializeEvents();
-
-    const rememberedUser = localStorage.getItem(STORAGE_KEYS.currentUser);
-
-    if (rememberedUser && FAMILY_MEMBERS.includes(rememberedUser) && rememberedUser !== "العائلة") {
-        currentUser = rememberedUser;
-        showApp();
-    } else {
-        showLogin();
-    }
 });
 
 function initializeEvents() {
-    document.getElementById("loginButton")?.addEventListener("click", handleLogin);
-
-    document.getElementById("loginPin")?.addEventListener("keydown", event => {
-        if (event.key === "Enter") handleLogin();
-    });
-
-    document.getElementById("loginMember")?.addEventListener("change", updateLoginHint);
+    document.getElementById("loginForm")?.addEventListener("submit", handleLogin);
     document.getElementById("logoutButton")?.addEventListener("click", logout);
 
     document.getElementById("taskForm")?.addEventListener("submit", event => {
@@ -121,7 +158,7 @@ function initializeEvents() {
 
     document.querySelectorAll(".filter-btn").forEach(button => {
         button.addEventListener("click", () => {
-            currentFilter = button.dataset.filter;
+            currentFilter = button.dataset.filter || "all";
 
             document.querySelectorAll(".filter-btn").forEach(btn => {
                 btn.classList.toggle("active", btn === button);
@@ -144,15 +181,87 @@ function initializeEvents() {
         if (button) deleteTask(button.dataset.id);
     });
 
-    updateLoginHint();
+    onAuthStateChanged(auth, async user => {
+        if (!user) {
+            stopSharedListener();
+            currentUser = "";
+            cloudReady = false;
+            showLogin();
+            return;
+        }
+
+        const email = (user.email || "").toLowerCase();
+
+        const member = Object.keys(MEMBER_EMAILS).find(
+            name => MEMBER_EMAILS[name].toLowerCase() === email
+        );
+
+        if (!member) {
+            await signOut(auth);
+            setLoginError("هذا الحساب غير موجود ضمن حسابات العائلة المعتمدة.");
+            return;
+        }
+
+        currentUser = member;
+        document.getElementById("loginMember").value = member;
+
+        await startSharedData();
+    });
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+
+    const member = document.getElementById("loginMember").value;
+    const password = document.getElementById("loginPassword").value;
+    const email = MEMBER_EMAILS[member];
+
+    setLoginError("");
+
+    if (!email || !password) {
+        setLoginError("اختر اسمك وأدخل كلمة المرور.");
+        return;
+    }
+
+    setLoginBusy(true);
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        document.getElementById("loginPassword").value = "";
+    } catch (error) {
+        console.error("Firebase login error:", error);
+
+        const messages = {
+            "auth/invalid-credential": "كلمة المرور غير صحيحة أو بيانات الحساب غير صحيحة.",
+            "auth/wrong-password": "كلمة المرور غير صحيحة.",
+            "auth/user-not-found": "هذا الحساب غير موجود في Firebase Authentication.",
+            "auth/invalid-email": "البريد الإلكتروني المرتبط بهذا الاسم غير صالح.",
+            "auth/too-many-requests": "محاولات كثيرة. انتظر قليلاً ثم حاول مجدداً.",
+            "auth/network-request-failed": "تعذر الاتصال بالإنترنت. تحقق من الاتصال وحاول مرة أخرى.",
+            "auth/user-disabled": "هذا الحساب معطل. راجع إعدادات Firebase."
+        };
+
+        setLoginError(messages[error.code] || `تعذر تسجيل الدخول: ${error.message}`);
+    } finally {
+        setLoginBusy(false);
+    }
+}
+
+async function logout() {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error(error);
+        alert("تعذر تسجيل الخروج. حاول مرة أخرى.");
+    }
 }
 
 function showLogin() {
     document.getElementById("loginScreen").hidden = false;
     document.getElementById("appContainer").hidden = true;
-    document.getElementById("loginPin").value = "";
-    document.getElementById("loginError").textContent = "";
-    updateLoginHint();
+
+    const password = document.getElementById("loginPassword");
+    if (password) password.value = "";
 }
 
 function showApp() {
@@ -160,10 +269,7 @@ function showApp() {
     document.getElementById("appContainer").hidden = false;
 
     const selector = document.getElementById("userSelect");
-
-    if (selector && currentUser !== "العائلة") {
-        selector.value = currentUser;
-    }
+    if (selector && currentUser) selector.value = currentUser;
 
     renderTasks();
     updateDashboard();
@@ -171,52 +277,90 @@ function showApp() {
     updatePersonalProfile();
 }
 
-function updateLoginHint() {
-    const member = document.getElementById("loginMember")?.value;
-    const pins = readStorage(STORAGE_KEYS.pins, {});
-    const hint = document.getElementById("loginHint");
-
-    if (hint) {
-        hint.textContent = pins[member]
-            ? "أدخل رمز PIN الذي أنشأته لهذا الحساب."
-            : "أول دخول لهذا الحساب: أدخل رمزاً جديداً من 4 إلى 8 أرقام لإنشائه.";
+function stopSharedListener() {
+    if (typeof unsubscribeSharedData === "function") {
+        unsubscribeSharedData();
+        unsubscribeSharedData = null;
     }
 }
 
-function handleLogin() {
-    const member = document.getElementById("loginMember").value;
-    const pin = document.getElementById("loginPin").value.trim();
-    const error = document.getElementById("loginError");
-    const pins = readStorage(STORAGE_KEYS.pins, {});
+async function startSharedData() {
+    try {
+        await migrateLocalDataIfNeeded();
 
-    if (!/^\d{4,8}$/.test(pin)) {
-        error.textContent = "رمز PIN يجب أن يتكون من 4 إلى 8 أرقام.";
-        return;
+        stopSharedListener();
+
+        unsubscribeSharedData = onSnapshot(SHARED_DOC, snapshot => {
+            const data = snapshot.exists() ? snapshot.data() : {};
+
+            tasks = normalizeTasks(data.tasks);
+            familyScores = normalizeScores(data.scores);
+            cloudReady = true;
+
+            mirrorLocalData();
+            showAppAndRefresh();
+        }, error => {
+            console.error("Firestore listener error:", error);
+            cloudReady = false;
+            alert("تم تسجيل الدخول، لكن تعذر تحميل بيانات العائلة. تحقق من قواعد Firestore.");
+        });
+    } catch (error) {
+        console.error("Firestore setup error:", error);
+        alert("تم تسجيل الدخول لكن تعذر تهيئة بيانات العائلة. تأكد من إنشاء قاعدة Firestore وضبط قواعدها.");
     }
-
-    if (pins[member] && pins[member] !== pin) {
-        error.textContent = "رمز PIN غير صحيح. حاول مرة أخرى.";
-        return;
-    }
-
-    if (!pins[member]) {
-        pins[member] = pin;
-        if (!saveStorage(STORAGE_KEYS.pins, pins)) return;
-    }
-
-    currentUser = member;
-    localStorage.setItem(STORAGE_KEYS.currentUser, member);
-    error.textContent = "";
-    showApp();
 }
 
-function logout() {
-    localStorage.removeItem(STORAGE_KEYS.currentUser);
-    currentUser = "";
-    showLogin();
+/* نقل البيانات القديمة من المتصفح مرة واحدة فقط إذا لم توجد بيانات سحابية */
+async function migrateLocalDataIfNeeded() {
+    await runTransaction(db, async transaction => {
+        const snapshot = await transaction.get(SHARED_DOC);
+
+        if (snapshot.exists()) return;
+
+        const oldTasks = normalizeTasks(readStorage(STORAGE_KEYS.tasks, []));
+        const oldScores = normalizeScores(readStorage(STORAGE_KEYS.scores, {}));
+
+        transaction.set(SHARED_DOC, {
+            tasks: oldTasks,
+            scores: oldScores,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+    });
 }
 
-function addTask() {
+async function updateSharedData(mutator) {
+    if (!auth.currentUser || !cloudReady) {
+        alert("بيانات العائلة لم تكتمل مزامنتها بعد. انتظر لحظة ثم حاول.");
+        return false;
+    }
+
+    try {
+        await runTransaction(db, async transaction => {
+            const snapshot = await transaction.get(SHARED_DOC);
+            const data = snapshot.exists() ? snapshot.data() : {};
+
+            const nextTasks = normalizeTasks(data.tasks);
+            const nextScores = normalizeScores(data.scores);
+
+            mutator(nextTasks, nextScores);
+
+            transaction.set(SHARED_DOC, {
+                tasks: nextTasks,
+                scores: nextScores,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        });
+
+        return true;
+    } catch (error) {
+        console.error("Firestore update error:", error);
+        alert("لم يتم حفظ التغيير في السحابة. تحقق من الاتصال وقواعد Firestore.");
+        return false;
+    }
+}
+
+async function addTask() {
     const input = document.getElementById("taskInput");
     const category = document.getElementById("categorySelect").value;
     const user = document.getElementById("userSelect").value;
@@ -228,19 +372,67 @@ function addTask() {
         return;
     }
 
-    tasks.unshift({
-        id: createId(),
-        text,
-        category,
-        user,
-        completed: false
+    const added = await updateSharedData(cloudTasks => {
+        cloudTasks.unshift({
+            id: createId(),
+            text,
+            category,
+            user,
+            completed: false,
+            awardedTo: ""
+        });
     });
 
-    saveStorage(STORAGE_KEYS.tasks, tasks);
-    input.value = "";
-    renderTasks();
-    updateDashboard();
-    input.focus();
+    if (added) {
+        input.value = "";
+        input.focus();
+    }
+}
+
+async function toggleTask(id) {
+    await updateSharedData((cloudTasks, scores) => {
+        const task = cloudTasks.find(item => item.id === id);
+        if (!task) return;
+
+        if (!task.completed) {
+            const recipient = task.user === "العائلة" ? currentUser : task.user;
+
+            task.completed = true;
+            task.awardedTo = FAMILY_MEMBERS.includes(recipient) ? recipient : currentUser;
+
+            scores[task.awardedTo] = (scores[task.awardedTo] || 0) + EXP_PER_TASK;
+        } else {
+            task.completed = false;
+
+            if (task.awardedTo && FAMILY_MEMBERS.includes(task.awardedTo)) {
+                scores[task.awardedTo] = Math.max(
+                    0,
+                    (scores[task.awardedTo] || 0) - EXP_PER_TASK
+                );
+            }
+
+            task.awardedTo = "";
+        }
+    });
+}
+
+async function deleteTask(id) {
+    const confirmed = confirm("هل تريد حذف هذه المهمة؟");
+    if (!confirmed) return;
+
+    await updateSharedData((cloudTasks, scores) => {
+        const index = cloudTasks.findIndex(item => item.id === id);
+        if (index === -1) return;
+
+        const [task] = cloudTasks.splice(index, 1);
+
+        if (task.completed && task.awardedTo && FAMILY_MEMBERS.includes(task.awardedTo)) {
+            scores[task.awardedTo] = Math.max(
+                0,
+                (scores[task.awardedTo] || 0) - EXP_PER_TASK
+            );
+        }
+    });
 }
 
 function renderTasks() {
@@ -297,180 +489,133 @@ function renderTasks() {
         deleteButton.className = "delete-btn";
         deleteButton.textContent = "حذف";
         deleteButton.dataset.id = task.id;
+        deleteButton.setAttribute("aria-label", "حذف المهمة");
 
         item.append(checkbox, info, deleteButton);
-        list.appendChild(item);
+        list.append(item);
     });
 
     const count = document.getElementById("taskCount");
-
-    if (count) count.textContent = filtered.length + " مهمة";
-}
-
-function toggleTask(id) {
-    const task = tasks.find(item => item.id === id);
-
-    if (!task) return;
-
-    task.completed = !task.completed;
-
-    familyScores[task.user] = Math.max(
-        0,
-        (familyScores[task.user] || 0) + (task.completed ? EXP_PER_TASK : -EXP_PER_TASK)
-    );
-
-    saveStorage(STORAGE_KEYS.tasks, tasks);
-    saveStorage(STORAGE_KEYS.scores, familyScores);
-
-    renderTasks();
-    updateDashboard();
-    updateLeaderboard();
-    updatePersonalProfile();
-
-    if (task.completed && typeof confetti === "function") {
-        confetti({
-            particleCount: 65,
-            spread: 65,
-            origin: { y: 0.7 }
-        });
-    }
-}
-
-function deleteTask(id) {
-    const task = tasks.find(item => item.id === id);
-
-    if (!task || !confirm("هل تريد حذف هذه المهمة؟")) return;
-
-    tasks = tasks.filter(item => item.id !== id);
-
-    saveStorage(STORAGE_KEYS.tasks, tasks);
-    renderTasks();
-    updateDashboard();
+    if (count) count.textContent = `${filtered.length} مهمة`;
 }
 
 function updateDashboard() {
     const total = tasks.length;
     const completed = tasks.filter(task => task.completed).length;
-    const percentage = total ? Math.round(completed / total * 100) : 0;
+    const remaining = total - completed;
 
     const totalExp = Object.values(familyScores).reduce(
-        (sum, points) => sum + (Number(points) || 0), 0
+        (sum, value) => sum + Number(value || 0),
+        0
     );
 
-    const setText = (id, value) => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = value;
-    };
+    const percent = total ? Math.round((completed / total) * 100) : 0;
 
-    setText("totalTasks", total);
-    setText("completedTasks", completed);
-    setText("remainingTasks", total - completed);
-    setText("totalPoints", totalExp);
-    setText("progressText", percentage + "%");
+    document.getElementById("totalTasks").textContent = total;
+    document.getElementById("completedTasks").textContent = completed;
+    document.getElementById("remainingTasks").textContent = remaining;
+    document.getElementById("totalPoints").textContent = totalExp;
+    document.getElementById("progressText").textContent = `${percent}%`;
+    document.getElementById("progressBar").style.width = `${percent}%`;
 
-    const bar = document.getElementById("progressBar");
-    if (bar) bar.style.width = percentage + "%";
+    const message = percent === 100 && total
+        ? "رائع! أنجزتم جميع المهام 🎉"
+        : completed
+            ? "أحسنتم! واصلوا التقدم معاً."
+            : "لنبدأ بإنجاز مهامنا اليوم!";
 
-    let message = "لنبدأ بإنجاز مهامنا اليوم!";
-
-    if (percentage === 100 && total > 0) {
-        message = "رائع! أنجزت العائلة جميع المهام 🎉";
-    } else if (percentage >= 70) {
-        message = "إنجاز ممتاز! اقتربتم من النهاية.";
-    } else if (percentage >= 30) {
-        message = "عمل رائع، استمروا معاً!";
-    }
-
-    setText("progressMessage", message);
-}
-
-function updateLeaderboard() {
-    const leaderboard = document.getElementById("leaderboard");
-
-    if (!leaderboard) return;
-
-    leaderboard.replaceChildren();
-
-    FAMILY_MEMBERS.filter(name => name !== "العائلة")
-        .map(name => ({
-            name,
-            exp: familyScores[name] || 0
-        }))
-        .sort((a, b) => b.exp - a.exp)
-        .forEach((member, index) => {
-            const row = document.createElement("div");
-            row.className = "leader-row";
-
-            const rank = document.createElement("span");
-            rank.className = "leader-rank";
-            rank.textContent = ["🥇", "🥈", "🥉"][index] || String(index + 1);
-
-            const nameWrap = document.createElement("div");
-            nameWrap.className = "leader-name";
-
-            const name = document.createElement("span");
-            name.textContent = member.name;
-
-            const level = document.createElement("small");
-            level.className = "leader-level";
-            level.textContent = "المستوى " + getLevel(member.exp).level;
-
-            nameWrap.append(name, level);
-
-            const points = document.createElement("span");
-            points.className = "leader-points";
-            points.textContent = "⭐ " + member.exp + " EXP";
-
-            row.append(rank, nameWrap, points);
-            leaderboard.appendChild(row);
-        });
+    document.getElementById("progressMessage").textContent = message;
 }
 
 function updatePersonalProfile() {
     if (!currentUser) return;
 
     const exp = familyScores[currentUser] || 0;
-    const info = getLevel(exp);
+    const level = getLevel(exp);
 
-    const name = document.getElementById("personalName");
-    if (name) name.textContent = currentUser;
-
-    const level = document.getElementById("personalLevel");
-    if (level) level.textContent = "المستوى " + info.level;
-
-    const expElement = document.getElementById("personalExp");
-    if (expElement) expElement.textContent = exp + " EXP";
-
-    const bar = document.getElementById("personalLevelBar");
-    if (bar) bar.style.width = info.percent + "%";
-
-    const caption = document.getElementById("personalLevelCaption");
-
-    if (caption) {
-        caption.textContent =
-            info.intoLevel + " / " + EXP_PER_LEVEL +
-            " EXP للمستوى التالي — متبقٍ " + info.remaining;
-    }
+    document.getElementById("personalName").textContent = currentUser;
+    document.getElementById("personalLevel").textContent = `المستوى ${level.level}`;
+    document.getElementById("personalExp").textContent = `${exp} EXP`;
+    document.getElementById("personalLevelBar").style.width = `${level.percent}%`;
+    document.getElementById("personalLevelCaption").textContent =
+        `${level.intoLevel} / ${EXP_PER_LEVEL} EXP للمستوى التالي`;
 }
 
-function initializeTheme() {
-    const dark = localStorage.getItem(STORAGE_KEYS.theme) === "dark";
+function updateLeaderboard() {
+    const leaderboard = document.getElementById("leaderboard");
+    if (!leaderboard) return;
 
-    document.body.classList.toggle("dark-theme", dark);
-    updateThemeButton(dark);
+    leaderboard.replaceChildren();
+
+    const sorted = FAMILY_MEMBERS
+        .map(member => ({ name: member, exp: familyScores[member] || 0 }))
+        .sort((a, b) => b.exp - a.exp);
+
+    sorted.forEach((person, index) => {
+        const row = document.createElement("div");
+        row.className = "leader-row";
+
+        const rank = document.createElement("span");
+        rank.className = "leader-rank";
+        rank.textContent = ["🥇", "🥈", "🥉"][index] || String(index + 1);
+
+        const name = document.createElement("span");
+        name.className = "leader-name";
+        name.textContent = person.name;
+
+        const level = document.createElement("small");
+        level.className = "leader-level";
+        level.textContent = `المستوى ${getLevel(person.exp).level}`;
+        name.append(level);
+
+        const points = document.createElement("span");
+        points.className = "leader-points";
+        points.textContent = `${person.exp} EXP`;
+
+        row.append(rank, name, points);
+        leaderboard.append(row);
+    });
+}
+
+function refreshDashboard() {
+    renderTasks();
+    updateDashboard();
+    updateLeaderboard();
+    updatePersonalProfile();
+}
+
+/* الوضع الليلي */
+function initializeTheme() {
+    const savedTheme = localStorage.getItem(STORAGE_KEYS.theme);
+
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+    }
+
+    updateThemeButton();
 }
 
 function toggleDarkMode() {
-    const dark = document.body.classList.toggle("dark-theme");
+    document.body.classList.toggle("dark-theme");
 
-    localStorage.setItem(STORAGE_KEYS.theme, dark ? "dark" : "light");
-    updateThemeButton(dark);
+    localStorage.setItem(
+        STORAGE_KEYS.theme,
+        document.body.classList.contains("dark-theme") ? "dark" : "light"
+    );
+
+    updateThemeButton();
 }
 
-function updateThemeButton(dark) {
+function updateThemeButton() {
+    const dark = document.body.classList.contains("dark-theme");
     const icon = document.getElementById("themeIcon");
     const label = document.getElementById("themeLabel");
 
     if (icon) icon.textContent = dark ? "☀️" : "🌙";
     if (label) label.textContent = dark ? "الوضع النهاري" : "الوضع الليلي";
+}
+
+function showAppAndRefresh() {
+    showApp();
+    refreshDashboard();
 }
