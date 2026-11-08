@@ -3,68 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة عائلتنا الذكية السحابية</title>
+    <meta name="theme-color" content="#f5f7fb">
+    <meta name="description" content="منصة عائلية ذكية لتنظيم المهام والطلبات والتذكيرات">
+    <title>عائلتنا | المنصة الذكية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="style.css">
-    <!-- مكتبة الألعاب النارية -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="script.js" defer></script>
 </head>
+
 <body>
+    <div class="app-container">
 
-    <button class="mode-btn" onclick="toggleDarkMode()">🌙 المظهر</button>
+        <header class="topbar">
+            <a href="#" class="brand">
+                <div class="brand-icon">⌂</div>
+                <div>
+                    <strong>عائلتنا</strong>
+                    <span>المنصة الذكية</span>
+                </div>
+            </a>
 
-    <h1>🏠 منصة العائلة الذكية (سحابي)</h1>
-    
-    <div class="daily-quote">
-        💡 <strong>دعاء اليوم:</strong> "اللهم احفظ الوالد التجاني والوالدة تهاني وبارِك في عائلتنا واجعل بيتنا عامراً بالخير والرضا"
+            <button id="themeToggle" class="theme-btn" type="button" aria-label="تغيير المظهر">
+                <span id="themeIcon">🌙</span>
+                <span id="themeLabel">الوضع الليلي</span>
+            </button>
+        </header>
+
+        <main>
+            <section class="welcome-section">
+                <div>
+                    <span class="eyebrow">HOME MANAGEMENT</span>
+                    <h1>أهلاً بعائلتنا <span>👋</span></h1>
+                    <p>كل شيء في بيتنا يصبح أسهل عندما ننظمه معاً.</p>
+                </div>
+                <div class="welcome-decoration">🏡</div>
+            </section>
+
+            <section class="quote-card">
+                <div class="quote-icon">✨</div>
+                <div>
+                    <strong>دعاء العائلة</strong>
+                    <p>اللهم احفظ الوالد التجاني والوالدة تهاني وبارك في عائلتنا واجعل بيتنا عامراً بالخير والرضا.</p>
+                </div>
+            </section>
+
+            <section class="stats-grid">
+                <article class="stat-card">
+                    <div class="stat-icon purple">📋</div>
+                    <span>إجمالي المهام</span>
+                    <strong id="totalTasks">0</strong>
+                    <small>جميع الطلبات المسجلة</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon green">✓</div>
+                    <span>المهام المكتملة</span>
+                    <strong id="completedTasks">0</strong>
+                    <small>تم إنجازها بنجاح</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon orange">⏳</div>
+                    <span>المهام المتبقية</span>
+                    <strong id="remainingTasks">0</strong>
+                    <small>بانتظار الإنجاز</small>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-icon blue">⭐</div>
+                    <span>مجموع النقاط</span>
+                    <strong id="totalPoints">0</strong>
+                    <small>إنجازات العائلة</small>
+                </article>
+            </section>
+
+            <section class="content-grid">
+
+                <div class="main-column">
+
+                    <section class="panel progress-panel">
+                        <div class="section-heading">
+                            <div>
+                                <span class="eyebrow">YOUR PROGRESS</span>
+                                <h2>إنجازات العائلة</h2>
+                            </div>
+                            <span id="progressText" class="progress-percent">0%</span>
+                        </div>
+
+                        <div class="progress-track">
+                            <div id="progressBar" class="progress-fill"></div>
+                        </div>
+
+                        <p id="progressMessage" class="muted-text">لنبدأ بإنجاز مهامنا اليوم!</p>
+                    </section>
+
+                    <section class="panel">
+                        <div class="section-heading">
+                            <div>
+                                <span class="eyebrow">TASK MANAGEMENT</span>
+                                <h2>إضافة طلب أو تذكير</h2>
+                            </div>
+                            <span class="heading-icon">📝</span>
+                        </div>
+
+                        <form id="taskForm">
+                            <div class="form-field">
+                                <label for="taskInput">اسم المهمة</label>
+                                <input
+                                    type="text"
+                                    id="taskInput"
+                                    maxlength="120"
+                                    placeholder="مثلاً: شراء الأرز والحليب..."
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-field">
+                                    <label for="categorySelect">التصنيف</label>
+                                    <select id="categorySelect">
+                                        <option value="🛒 طلبات المقاضي">🛒 طلبات المقاضي</option>
+                                        <option value="🍲 وجبات الطعام">🍲 وجبات الطعام</option>
+                                        <option value="💊 مواعيد وأدوية">💊 مواعيد وأدوية</option>
+                                        <option value="⚡ فواتير ومصاريف">⚡ فواتير ومصاريف</option>
+                                        <option value="🏠 مهام المنزل">🏠 مهام المنزل</option>
+                                        <option value="📌 أخرى">📌 أخرى</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="userSelect">المسؤول عن المهمة</label>
+                                    <select id="userSelect">
+                                        <option value="الوالد التجاني">الوالد التجاني</option>
+                                        <option value="الوالدة تهاني">الوالدة تهاني</option>
+                                        <option value="أحمد">أحمد</option>
+                                        <option value="السر">السر</option>
+                                        <option value="أسامة">أسامة</option>
+                                        <option value="محمد">محمد</option>
+                                        <option value="العائلة">جميع العائلة</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="primary-btn">
+                                <span>＋</span> إضافة المهمة
+                            </button>
+                        </form>
+                    </section>
+
+                    <section class="panel tasks-panel">
+                        <div class="section-heading">
+                            <div>
+                                <span class="eyebrow">YOUR TASKS</span>
+                                <h2>قائمة المهام</h2>
+                            </div>
+                            <span id="taskCount" class="count-badge">0 مهمة</span>
+                        </div>
+
+                        <div class="filter-row">
+                            <button class="filter-btn active" data-filter="all">الكل</button>
+                            <button class="filter-btn" data-filter="pending">قيد الانتظار</button>
+                            <button class="filter-btn" data-filter="completed">مكتملة</button>
+                        </div>
+
+                        <ul id="taskList" class="task-list"></ul>
+
+                        <div id="emptyState" class="empty-state">
+                            <div>📭</div>
+                            <strong>لا توجد مهام هنا</strong>
+                            <p>أضف أول مهمة وابدأ تنظيم يوم العائلة.</p>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="side-column">
+                    <section class="panel leaderboard-panel">
+                        <div class="section-heading">
+                            <div>
+                                <span class="eyebrow">FAMILY LEADERS</span>
+                                <h2>متصدرو النقاط</h2>
+                            </div>
+                            <span>🏆</span>
+                        </div>
+
+                        <div id="leaderboard" class="leaderboard-list"></div>
+
+                        <div class="points-note">
+                            ⭐ كل مهمة مكتملة تمنح المسؤول 10 نقاط.
+                        </div>
+                    </section>
+
+                    <section class="motivation-card">
+                        <div class="motivation-icon">🌟</div>
+                        <h3>معاً نصنع الفرق!</h3>
+                        <p>كل مهمة صغيرة ننجزها اليوم تجعل بيتنا أكثر تنظيماً وسعادة.</p>
+                    </section>
+                </aside>
+
+            </section>
+        </main>
+
+        <footer>
+            <span>© 2026 | أحمد</span>
+        </footer>
+
     </div>
-
-    <!-- لوحة متصدري النقاط -->
-    <div class="leaderboard-card">
-        <h3>🏆 لوحة متصدري النقاط العائلية (سحابي)</h3>
-        <div id="leaderboard" class="leaderboard-grid">
-            <!-- سيتم تحميل النقاط تلقائياً من Firestore -->
-        </div>
-    </div>
-
-    <div class="progress-container">
-        <div class="progress-label">نسبة اكتمال طلبات المنزل: <span id="progressText">0%</span></div>
-        <div class="progress-bar-outer">
-            <div id="progressBar" class="progress-bar-inner"></div>
-        </div>
-    </div>
-
-    <h2>📝 إضافة طلب / تذكير جديد</h2>
-
-    <div class="input-group">
-        <input type="text" id="taskInput" placeholder="اكتب طلب مقاضي، موعد، أو اقتراح وجبة...">
-        
-        <select id="categorySelect">
-            <option value="🛒 طلبات المقاضي">🛒 طلبات المقاضي</option>
-            <option value="🍲 وجبة الغداء/العشاء">🍲 اقتراح وجبة</option>
-            <option value="💊 مواعيد وأدوية">💊 مواعيد وأدوية</option>
-            <option value="⚡ فواتير ومصاريف">⚡ فواتير ومصاريف</option>
-        </select>
-
-        <select id="userSelect">
-            <option value="الوالد التجاني">الوالد التجاني 👨‍🦳</option>
-            <option value="الوالدة تهاني">الوالدة تهاني 👩‍🦳</option>
-            <option value="أحمد">أحمد (المطور) 💻</option>
-            <option value="السر">السر 👦</option>
-            <option value="أسامة">أسامة 👦</option>
-            <option value="محمد">محمد 👦</option>
-            <option value="العائلة">جميع العائلة 🏠</option>
-        </select>
-
-        <button onclick="addTask()">إضافة 🚀</button>
-    </div>
-
-    <ul id="taskList"></ul>
-
-    <footer>
-        <p>💡 تم تصميم هذا الموقع بحب لخدمة عائلتي الغالية بواسطة المطور <strong>أحمد</strong> | 2026 ©</p>
-    </footer>
-
-    <!-- ربط ملف الجافاسكريبت بنظام الموديول لتوافقية Firebase -->
-    <script type="module" src="script.js"></script>
 </body>
 </html>

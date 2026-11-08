@@ -1,4 +1,3 @@
-
 :root {
     --bg: #f5f7fb;
     --surface: #ffffff;
@@ -638,12 +637,5 @@ footer p {
 
     .task-item {
         gap: 7px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        scroll-behavior: auto !important;
-        transition-duration: 0.01ms !important;
     }
 }
